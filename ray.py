@@ -11,5 +11,8 @@ class Ray:
 def construct_ray_through_pixel(screen, h, w): 
     origin_position = screen.camera.position
     pixel_position = screen.get_pix_location(h, w)
-    direction = (pixel_position - origin_position) / np.abs(pixel_position - origin_position)
-    return Ray(origin_position, direction)
+    return construct_ray(origin_position, pixel_position)
+
+def construct_ray(start_point, end_point):
+    direction = (end_point - start_point) / np.abs(end_point - start_point)
+    return Ray(start_point, direction)
