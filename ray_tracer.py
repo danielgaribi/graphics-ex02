@@ -10,6 +10,10 @@ from surfaces.cube import Cube
 from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
 
+from intersection import find_intersection
+from screen import Screen
+from ray import construct_ray_through_pixel
+
 OBJECT_IDX  = 0
 DIST_IDX    = 1
 
@@ -54,16 +58,6 @@ def save_image(image_array):
     # Save the image to a file
     image.save("scenes/Spheres.png")
 
-def construct_ray_through_pixel(): 
-    pass 
-
-# TODO: Garibi - return a tuple of (surface, dist) of all objects intersacting the ray as a sorted array by distance (first is the closest to the origin of the ray)
-def find_intersection(object_array, ray):
-    pass
-
-def find_cordination(ray, dist):
-    pass 
-
 # return the normal of the surface - normalized
 def compute_surface_normal(surface_obj, surface_dist):
     pass 
@@ -106,7 +100,7 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, m
     curr_surface_obj    = surfaces[surface_idx][OBJECT_IDX]
     curr_surface_dist   = surfaces[surface_idx][DIST_IDX]
     
-    intersection_cord = find_cordination(ray, curr_surface_dist)
+    intersection_cord = ray.get_postion(curr_surface_dist)
     normal = compute_surface_normal(curr_surface_obj, curr_surface_dist)
 
     # Get surface's material
@@ -170,12 +164,13 @@ def main():
     # TODO - remove - basic init
     img_width = 500
     img_height = 500
+    screen = Screen(camera, img_width, img_height)
 
     image_array = np.zeros((img_height, img_width, 3), dtype=float)
-    for i in range(img_width):
-        for j in range(img_height):
-            ray = construct_ray_through_pixel()
-            image_array[j, i] = compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, camera.position, 0)
+    for w in range(img_width):
+        for h in range(img_height):
+            ray = construct_ray_through_pixel(screen, h, w)
+            image_array[h, w] = compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, camera.position, 0)
 
     # Save the output image
     save_image(image_array)
