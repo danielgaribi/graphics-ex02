@@ -65,7 +65,7 @@ def find_cube_intersect(ray, cube):
     
     return t_enter
 
-# TODO: Garibi - return a tuple of (surface, dist) of all objects intersacting the ray as a sorted array by distance (first is the closest to the origin of the ray)
+# Return a tuple of (surface, dist) of all objects intersacting the ray as a sorted array by distance (first is the closest to the origin of the ray)
 def find_intersection(object_array, ray):
     intersercions = []
     

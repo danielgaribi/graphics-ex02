@@ -10,6 +10,7 @@ class Screen:
         self.width = camera.screen_width
         self.height = self.pixel_width * img_pix_height
 
+        # TODO: Garibi - Runtime error
         self.through_vector = (camera.look_at - camera.position) / np.abs(camera.look_at - camera.position)
         self.right_vector = np.cross(camera.up_vector, self.through_vector) / np.abs(np.cross(camera.up_vector, self.through_vector))
         self.up_vector = np.cross(self.right_vector, self.through_vector)
