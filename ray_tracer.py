@@ -69,43 +69,58 @@ def compute_surface_normal(surface_obj, intersection_cord):
         normal = surface_obj.normal
     else: 
         # TODO: compute cube normal
-        normal = 0
+        normal = np.array([1,1,1])
     
     return normal
 
 # TODO: double check 
-def compute_intencity(scene_settings, light, intersection_cord, surface_obj, object_array):
+def compute_intensity(scene_settings, light, intersection_coord, surface_obj, object_array):
     N = int(scene_settings.root_number_shadow_rays)
-    grid_len = light.radius / N
-    center_light_ray = construct_ray(intersection_cord, light.position) 
 
-    # construct rect width and height vectors and normalized them with the size of step = gric_len
-    # TODO: use up_vector and right vector instead?
+    # Construct a light ray
+    center_light_ray = construct_ray(intersection_coord, light.position)
+
+    # Find a plane perpendicular to the ray
     width_vec = np.cross(center_light_ray.direction, np.array([1, 0, 0]))
     if (width_vec == 0).all():
         width_vec = np.cross(center_light_ray.direction, np.array([0, 1, 0]))
     width_vec /= np.linalg.norm(width_vec)
 
     height_vec = np.cross(center_light_ray.direction, width_vec)
-    height_vec = height_vec / np.linalg.norm(height_vec)
 
-    width_vec  *= grid_len
-    height_vec *= grid_len
+    # Define a rectangle on the plane centered at the light source
+    rect_bottom_left = light.position - (light.radius / 2) * width_vec - (light.radius / 2) * height_vec
 
-    # Find Top-Left grid cell
-    top_left_grid_cell_position = light.position + width_vec * (light.radius / 2) - height_vec * (light.radius / 2)
-    lights_intersection_counter = 0
-    for w in range(N):
-        for h in range(N):
-            grid_cell_cord = top_left_grid_cell_position + (w + random.random()) * width_vec - (h + random.random()) * height_vec
-            grid_cell_ray = construct_ray(intersection_cord, grid_cell_cord)
+    # Divide the rectangle into a grid of N x N cells
+    cell_size = light.radius / N
+
+    # Re-sizing of width_vec and height_vec with step size of cell_size
+    width_vec *= cell_size
+    height_vec *= cell_size
+
+    # Initialize a variable to count rays hitting the surface
+    rays_hit = 0
+    for i in range(N):
+        for j in range(N):
+            # Generate a random point inside each cell
+            rand_x = random.random()
+            rand_y = random.random()
+            cell_position = rect_bottom_left + (i + rand_x) * width_vec + (j + rand_y) * height_vec
+
+            # Construct a shadow ray from the random point to the intersection coordinate
+            grid_cell_ray = construct_ray(intersection_coord, cell_position)
+
+            # Find the objects the shadow ray intersects with
             surface_dist = find_intersection(object_array, grid_cell_ray)
-            if (np.linalg.norm(grid_cell_ray.get_postion(surface_dist[DIST_IDX]), intersection_cord) < EPSILON):
-                lights_intersection_counter += 1
-    
-    light_rays_ratio = float(lights_intersection_counter) / float(N * N)
+            first_surface_dist = surface_dist[0]
+            if (np.linalg.norm(grid_cell_ray.get_postion(first_surface_dist[DIST_IDX]) - intersection_coord) < EPSILON):
+                rays_hit += 1
+            
+
+    light_rays_ratio = float(rays_hit) / float(N * N)
     light_intensity = 1 * (1 - light.shadow_intensity) + light.shadow_intensity * light_rays_ratio
     return light_intensity
+
 
 def compute_reflection_direction(vec1, normal):
     teta = np.dot(vec1, normal)
@@ -118,12 +133,12 @@ def compute_diffuse_color(light, light_intensity, intersection_cord, normal):
 
     L_vec = light.position - intersection_cord
     L_vec = L_vec / np.linalg.norm(L_vec)
+
     N_dot_L = np.dot(normal, L_vec)
-    
-    if (N_dot_L < 0 ):
+    if (N_dot_L < 0):
         return np.zeros(3, dtype=float)
     
-    return light.color * N_dot_L * light_intensity
+    return np.array(light.color) * N_dot_L * light_intensity
 
 # Acording to ray_casting_presentation page 45
 def compute_specular_color(light, light_intensity, cam_pos, intersection_cord, normal, shininess):
@@ -139,7 +154,7 @@ def compute_specular_color(light, light_intensity, cam_pos, intersection_cord, n
     if (V_dot_R < 0):
         return np.zeros(3, dtype=float)
     
-    return light.color * np.power(V_dot_R, shininess) * light_intensity * light.specular_intensity
+    return np.array(light.color) * np.power(V_dot_R, shininess) * light_intensity * light.specular_intensity
     
 def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, object_array, material_array, light_array, recursion_level):
     curr_surface_obj  = surfaces[surface_idx][OBJECT_IDX]
@@ -156,11 +171,11 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     specular_color   = np.zeros(3, dtype=float)
 
     for light in light_array:
-        light_intensity = compute_intencity(scene_settings, light, intersection_cord, curr_surface_obj, object_array)
+        light_intensity = compute_intensity(scene_settings, light, intersection_cord, curr_surface_obj, object_array)
         diffuse_color  += compute_diffuse_color(light, light_intensity, intersection_cord, normal)
         specular_color += compute_specular_color(light, light_intensity, cam_pos, intersection_cord, normal, curr_material.shininess)
 
-    reflaction_direction = compute_reflection_direction(ray, normal)
+    reflaction_direction = compute_reflection_direction(ray.direction, normal)
     reflaction_ray = construct_ray(intersection_cord, reflaction_direction)
     # TODO: check if needed - Advance EPSILON to avoid intersection with the same object
     # reflaction_ray = construct_ray(reflaction_ray.get_postion(EPSILON), reflaction_direction)
@@ -202,7 +217,6 @@ def objects_to_numpy(camera, object_array):
             obj.normal = np.array(obj.normal)
         elif obj.__class__.__name__ == "Cube":
             obj.position = np.array(obj.position)
-            pass
         else:
             raise ValueError("Unknown object type: {}".format(obj.type))
 
