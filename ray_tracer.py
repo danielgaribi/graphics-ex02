@@ -253,7 +253,9 @@ def main():
     for w in range(img_width):
         for h in range(img_height):
             ray = construct_ray_through_pixel(screen, h, w)
-            image_array[h, w] = compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, camera.position, 0)
+            output_color = compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, camera.position, 0)
+            image_array[h, w] = output_color * 255 # Scale color values to [0, 255]
+            print(f"[h({h}),w({w})] = {image_array[h, w]}")
 
     # TODO: use arg?
     output_image_path = args.output_image
