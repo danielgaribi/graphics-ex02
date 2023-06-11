@@ -75,9 +75,9 @@ def compute_surface_normal(surface_obj, intersection_cord):
 
 # TODO: double check 
 def compute_intencity(scene_settings, light, intersection_cord, surface_obj, object_array):
-    N = scene_settings.root_number_shadow_rays
+    N = int(scene_settings.root_number_shadow_rays)
     grid_len = light.radius / N
-    center_light_ray = construct_ray(intersection_cord, light) 
+    center_light_ray = construct_ray(intersection_cord, light.position) 
 
     # construct rect width and height vectors and normalized them with the size of step = gric_len
     # TODO: use up_vector and right vector instead?
@@ -149,7 +149,7 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     normal = compute_surface_normal(curr_surface_obj, intersection_cord)
 
     # Get surface's material
-    curr_material = material_array[curr_surface_obj.material_index]
+    curr_material = material_array[curr_surface_obj.material_index - 1] # -1 because material index start from 1 TODO: check if needed
 
     bg_color         = np.array(scene_settings.background_color)
     diffuse_color    = np.zeros(3, dtype=float)
@@ -190,6 +190,22 @@ def compute_pixel_color(scene_settings, ray, object_array, material_array, light
     
     return np.array(output_color)
 
+def objects_to_numpy(camera, object_array):
+    camera.position = np.array(camera.position)
+    camera.look_at = np.array(camera.look_at)
+    camera.up_vector = np.array(camera.up_vector)
+
+    for obj in object_array:
+        if obj.__class__.__name__ == "Sphere":
+            obj.position = np.array(obj.position)
+        elif obj.__class__.__name__ == "InfinitePlane":
+            obj.normal = np.array(obj.normal)
+        elif obj.__class__.__name__ == "Cube":
+            obj.position = np.array(obj.position)
+            pass
+        else:
+            raise ValueError("Unknown object type: {}".format(obj.type))
+
 def main():
     parser = argparse.ArgumentParser(description='Python Ray Tracer')
     parser.add_argument('scene_file', type=str, help='Path to the scene file')
@@ -212,6 +228,8 @@ def main():
             light_array.append(obj)
         else:
             object_array.append(obj)
+
+    objects_to_numpy(camera, object_array)
 
     img_width = args.width
     img_height = args.width

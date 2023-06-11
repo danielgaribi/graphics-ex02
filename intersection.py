@@ -70,11 +70,11 @@ def find_intersection(object_array, ray):
     intersercions = []
     
     for obj in object_array:
-        if obj.type == "Sphere":
+        if obj.__class__.__name__ == "Sphere":
             dist = find_sphere_intersect(ray, obj)
-        elif obj.type == "InfinitePlane":
+        elif obj.__class__.__name__ == "InfinitePlane":
             dist = find_plane_intersect(ray, obj)
-        elif obj.type == "Cube":
+        elif obj.__class__.__name__ == "Cube":
             dist = find_cube_intersect(ray, obj)
         else:
             raise ValueError("Unknown object type: {}".format(obj.type))
