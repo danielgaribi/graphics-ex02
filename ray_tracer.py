@@ -63,15 +63,17 @@ def save_image(image_array):
 
 # return the normal of the surface - normalized
 def compute_surface_normal(surface_obj, intersection_cord):
-    if (type(surface_obj) == Sphere):
-        normal = (surface_obj.position - intersection_cord) / np.linalg.norm(surface_obj.position - intersection_cord)
-    elif ():
+    if (surface_obj.__class__.__name__ == "Sphere"):
+        normal = (intersection_cord - surface_obj.position) / np.linalg.norm(intersection_cord - surface_obj.position)
+    elif (surface_obj.__class__.__name__ == "InfinitePlane"):
         normal = surface_obj.normal
-    else: 
+    elif (surface_obj.__class__.__name__ == "InfinitePlane"):
         # TODO: compute cube normal
-        normal = np.array([1,1,1])
-    
-    return normal
+        normal = [1,1,1]
+    else: 
+        raise ValueError("Unknown object type: {}".format(obj.type))
+
+    return np.array(normal)
 
 # TODO: double check 
 def compute_intensity(scene_settings, light, intersection_coord, surface_obj, object_array):
@@ -112,13 +114,18 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
 
             # Find the objects the shadow ray intersects with
             surface_dist = find_intersection(object_array, grid_cell_ray)
+
+            # TODO: is needed?
+            if (len(surface_dist) == 0):
+                continue
+
             first_surface_dist = surface_dist[0]
             if (np.linalg.norm(grid_cell_ray.get_postion(first_surface_dist[DIST_IDX]) - intersection_coord) < EPSILON):
                 rays_hit += 1
             
 
     light_rays_ratio = float(rays_hit) / float(N * N)
-    light_intensity = 1 * (1 - light.shadow_intensity) + light.shadow_intensity * light_rays_ratio
+    light_intensity = 1 * (1 - light.shadow_intensity) + (light.shadow_intensity * light_rays_ratio)
     return light_intensity
 
 
@@ -130,11 +137,15 @@ def compute_reflection_direction(vec1, normal):
 
 # Acording to ray_casting_presentation page 42
 def compute_diffuse_color(light, light_intensity, intersection_cord, normal):
-
     L_vec = light.position - intersection_cord
     L_vec = L_vec / np.linalg.norm(L_vec)
 
     N_dot_L = np.dot(normal, L_vec)
+
+    # TODO: debug 
+    # print(f"L_vec: {L_vec}, normal: {normal}")
+    # print(f"N_dot_L: {N_dot_L}")
+    
     if (N_dot_L < 0):
         return np.zeros(3, dtype=float)
     
@@ -163,6 +174,11 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     intersection_cord = ray.get_postion(curr_surface_dist)
     normal = compute_surface_normal(curr_surface_obj, intersection_cord)
 
+    # TODO: debug 
+    print(f"ray.origin_position: {ray.origin_position}, ray.direction: {ray.direction}")
+    print(f"curr_surface_obj: {curr_surface_obj}, curr_surface_dist: {curr_surface_dist}")
+    print(f"intersection_cord: {intersection_cord}, normal: {normal}")
+
     # Get surface's material
     curr_material = material_array[curr_surface_obj.material_index - 1] # -1 because material index start from 1 TODO: check if needed
 
@@ -174,6 +190,11 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
         light_intensity = compute_intensity(scene_settings, light, intersection_cord, curr_surface_obj, object_array)
         diffuse_color  += compute_diffuse_color(light, light_intensity, intersection_cord, normal)
         specular_color += compute_specular_color(light, light_intensity, cam_pos, intersection_cord, normal, curr_material.shininess)
+        
+        # TODO: debug 
+        # print(f"light - position: {light.position}, color: {light.color}, specular_intensity: {light.specular_intensity}, shadow_intensity: {light.shadow_intensity}, radius: {light.radius}")
+        # print(f"light_intensity: {light_intensity}")
+        # print(f"diffuse_color (light): {diffuse_color}")
 
     reflaction_direction = compute_reflection_direction(ray.direction, normal)
     reflaction_ray = construct_ray(intersection_cord, reflaction_direction)
@@ -185,12 +206,20 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     if ((curr_material.transparency > 0.0) and (surface_idx + 1 < len(surfaces))):
         bg_color *= copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx + 1, object_array, material_array, light_array, recursion_level + 1)
 
-    diffuse_color    *= curr_material.diffuse_color
+    diffuse_color    *= curr_material.diffuse_color    
     specular_color   *= curr_material.specular_color
     reflection_color *= curr_material.reflection_color
 
+    # TODO: debug 
+    # print(f"curr_material.diffuse_color: {curr_material.diffuse_color}")
+    # print(f"diffuse_color (add material factor): {diffuse_color}")
+    # print(f"specular_color: {specular_color}")
+    # print(f"reflection_color: {reflection_color}")
+
     output_color = bg_color * curr_material.transparency + (diffuse_color + specular_color) * (1 - curr_material.transparency) + reflection_color
     # TODO: check if needed - Add clipping if above 1
+    # print(f"output_color[{output_color}] = bg_color[{bg_color}] * curr_material.transparency[{curr_material.transparency}] \n\t+ (diffuse_color[{diffuse_color}] + specular_color[{specular_color}]) * \n\t(1 - curr_material.transparency[{curr_material.transparency}]) + reflection_color[{reflection_color}]\n\n")
+
     return output_color
 
 def compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, cam_pos, recursion_level):
@@ -254,8 +283,11 @@ def main():
         for h in range(img_height):
             ray = construct_ray_through_pixel(screen, h, w)
             output_color = compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, camera.position, 0)
-            image_array[h, w] = output_color * 255 # Scale color values to [0, 255]
-            print(f"[h({h}),w({w})] = {image_array[h, w]}")
+            image_array[h, w] = np.clip(output_color * 255, 0, 255)  # Clip color values to [0, 255]
+            
+            # TODO: debug 
+            if (not np.all(image_array[h, w] == 255)):
+                print(f"output: [h({h}),w({w})] = {image_array[h, w]}\n")
 
     # TODO: use arg?
     output_image_path = args.output_image
