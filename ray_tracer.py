@@ -3,6 +3,9 @@ from PIL import Image
 import numpy as np
 import random
 
+# TODO: debug
+import time
+
 from camera import Camera
 from light import Light
 from material import Material
@@ -232,6 +235,9 @@ def objects_to_numpy(camera, object_array):
             raise ValueError("Unknown object type: {}".format(obj.type))
 
 def main():
+    # TODO: debug
+    start_time = time.time()
+
     parser = argparse.ArgumentParser(description='Python Ray Tracer')
     parser.add_argument('scene_file', type=str, help='Path to the scene file')
     parser.add_argument('output_image', type=str, help='Name of the output image file')
@@ -276,6 +282,12 @@ def main():
 
     # Save the output image
     save_image(image_array)
+
+    # TODO: debug
+    end_time = time.time() 
+    run_time = end_time - start_time
+    print(run_time)
+
 
 if __name__ == '__main__':
     main()
