@@ -280,8 +280,8 @@ def main():
             image_array[h, w] = np.clip(output_color * 255, 0, 255)  # Clip color values to [0, 255]
             
             # TODO: debug 
-            # if (not np.all(image_array[h, w] == 255)):
-            #     print(f"[h({h}),w({w})] = {image_array[h, w]}")
+            if ((w % 10 == 0) and (h % 500 == 0)):
+                print(f"[h({h}),w({w})] = {image_array[h, w]}")
 
     # TODO: use arg?
     output_image_path = args.output_image
