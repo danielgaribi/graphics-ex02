@@ -75,7 +75,7 @@ def compute_surface_normal(surface_obj, intersection_cord):
 
     return np.array(normal)
 
-# TODO: double check 
+# TODO: double check
 def compute_intensity(scene_settings, light, intersection_coord, surface_obj, object_array):
     N = int(scene_settings.root_number_shadow_rays)
 
@@ -140,12 +140,7 @@ def compute_diffuse_color(light, light_intensity, intersection_cord, normal):
     L_vec = light.position - intersection_cord
     L_vec = L_vec / np.linalg.norm(L_vec)
 
-    N_dot_L = np.dot(normal, L_vec)
-
-    # TODO: debug 
-    # print(f"L_vec: {L_vec}, normal: {normal}")
-    # print(f"N_dot_L: {N_dot_L}")
-    
+    N_dot_L = np.dot(normal, L_vec)    
     if (N_dot_L < 0):
         return np.zeros(3, dtype=float)
     
@@ -186,11 +181,6 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
         diffuse_color  += compute_diffuse_color(light, light_intensity, intersection_cord, normal)
         specular_color += compute_specular_color(light, light_intensity, cam_pos, intersection_cord, normal, curr_material.shininess)
         
-        # TODO: debug 
-        # print(f"light - position: {light.position}, color: {light.color}, specular_intensity: {light.specular_intensity}, shadow_intensity: {light.shadow_intensity}, radius: {light.radius}")
-        # print(f"light_intensity: {light_intensity}")
-        # print(f"diffuse_color (light): {diffuse_color}")
-
     reflaction_direction = compute_reflection_direction(ray.direction, normal)
     reflaction_ray = construct_ray(intersection_cord, reflaction_direction)
     # TODO: check if needed - Advance EPSILON to avoid intersection with the same object
@@ -212,8 +202,6 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     # print(f"reflection_color: {reflection_color}")
 
     output_color = bg_color * curr_material.transparency + (diffuse_color + specular_color) * (1 - curr_material.transparency) + reflection_color
-    # TODO: check if needed - Add clipping if above 1
-
     return output_color
 
 def compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, cam_pos, recursion_level):
