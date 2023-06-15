@@ -80,7 +80,7 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
     N = int(scene_settings.root_number_shadow_rays)
 
     # Construct a light ray
-    center_light_ray = construct_ray(intersection_coord, light.position)
+    center_light_ray = construct_ray(light.position, intersection_coord)
 
     # Find a plane perpendicular to the ray
     width_vec = np.cross(center_light_ray.direction, np.array([1, 0, 0]))
@@ -110,7 +110,7 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
             cell_position = rect_bottom_left + (i + rand_x) * width_vec + (j + rand_y) * height_vec
 
             # Construct a shadow ray from the random point to the intersection coordinate
-            grid_cell_ray = construct_ray(intersection_coord, cell_position)
+            grid_cell_ray = construct_ray(cell_position, intersection_coord)
 
             # Find the objects the shadow ray intersects with
             surface_dist = find_intersection(object_array, grid_cell_ray)
@@ -174,11 +174,6 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     intersection_cord = ray.get_postion(curr_surface_dist)
     normal = compute_surface_normal(curr_surface_obj, intersection_cord)
 
-    # TODO: debug 
-    print(f"ray.origin_position: {ray.origin_position}, ray.direction: {ray.direction}")
-    print(f"curr_surface_obj: {curr_surface_obj}, curr_surface_dist: {curr_surface_dist}")
-    print(f"intersection_cord: {intersection_cord}, normal: {normal}")
-
     # Get surface's material
     curr_material = material_array[curr_surface_obj.material_index - 1] # -1 because material index start from 1 TODO: check if needed
 
@@ -218,7 +213,6 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
 
     output_color = bg_color * curr_material.transparency + (diffuse_color + specular_color) * (1 - curr_material.transparency) + reflection_color
     # TODO: check if needed - Add clipping if above 1
-    # print(f"output_color[{output_color}] = bg_color[{bg_color}] * curr_material.transparency[{curr_material.transparency}] \n\t+ (diffuse_color[{diffuse_color}] + specular_color[{specular_color}]) * \n\t(1 - curr_material.transparency[{curr_material.transparency}]) + reflection_color[{reflection_color}]\n\n")
 
     return output_color
 
@@ -286,8 +280,8 @@ def main():
             image_array[h, w] = np.clip(output_color * 255, 0, 255)  # Clip color values to [0, 255]
             
             # TODO: debug 
-            if (not np.all(image_array[h, w] == 255)):
-                print(f"output: [h({h}),w({w})] = {image_array[h, w]}\n")
+            # if (not np.all(image_array[h, w] == 255)):
+            #     print(f"[h({h}),w({w})] = {image_array[h, w]}")
 
     # TODO: use arg?
     output_image_path = args.output_image
