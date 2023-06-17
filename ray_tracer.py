@@ -15,7 +15,7 @@ from surfaces.cube import Cube
 from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
 
-from intersection import find_intersection
+from intersection import find_intersection, is_ray_hit
 from screen import Screen
 from ray import construct_ray_through_pixel, construct_ray
 
@@ -128,6 +128,7 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
 
     # Initialize a variable to count rays hitting the surface
     rays_hit = 0
+    prior_obj = None
     for i in range(N):
         for j in range(N):
             # Generate a random point inside each cell
@@ -137,16 +138,13 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
 
             # Construct a shadow ray from the random point to the intersection coordinate
             grid_cell_ray = construct_ray(cell_position, intersection_coord)
+            max_dist = np.linalg.norm(cell_position - intersection_coord) - EPSILON
+            # grid_cell_ray = construct_ray(grid_cell_ray.get_postion(0.0001), cell_position)
 
             # Find the objects the shadow ray intersects with
-            surface_dist = find_intersection(object_array, grid_cell_ray)
+            is_hit_other_objects, prior_obj = is_ray_hit(object_array, grid_cell_ray, max_dist, prior_obj)
 
-            # TODO: is needed?
-            if (len(surface_dist) == 0):
-                continue
-
-            first_surface_dist = surface_dist[0]
-            if (np.linalg.norm(grid_cell_ray.get_postion(first_surface_dist[DIST_IDX]) - intersection_coord) < EPSILON):
+            if not is_hit_other_objects:
                 rays_hit += 1
             
 

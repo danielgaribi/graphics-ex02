@@ -1,6 +1,6 @@
 import numpy as np
-import bisect
 
+EPSILON = 10 ** -9
 DOESNT_INTERSECT = -1
 
 def find_sphere_intersect(ray, sphere):
@@ -86,7 +86,8 @@ def find_intersection(object_array, ray):
     
     return intersections
 
-def is_ray_hit(object_array, ray, prior_object):
+def is_ray_hit(object_array, ray, max_dist, prior_object):
+
     if prior_object is not None:
         if prior_object.__class__.__name__ == "Sphere":
             dist = find_sphere_intersect(ray, prior_object)
@@ -97,7 +98,7 @@ def is_ray_hit(object_array, ray, prior_object):
         else:
             raise ValueError("Unknown object type: {}".format(obj.type))
         
-        if dist != DOESNT_INTERSECT:
+        if dist != DOESNT_INTERSECT and dist < max_dist:
             return True, prior_object
     
     for obj in object_array:
@@ -110,7 +111,7 @@ def is_ray_hit(object_array, ray, prior_object):
         else:
             raise ValueError("Unknown object type: {}".format(obj.type))
         
-        if dist != DOESNT_INTERSECT:
+        if dist != DOESNT_INTERSECT and dist < max_dist:
             return True, obj
     
     return False, prior_object
