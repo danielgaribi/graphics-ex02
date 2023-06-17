@@ -208,9 +208,9 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
         specular_color += compute_specular_color(light, light_intensity, cam_pos, intersection_cord, normal, curr_material.shininess)
         
     reflaction_direction = compute_reflection_direction(ray.direction, normal)
-    reflaction_ray = construct_ray(intersection_cord, reflaction_direction)
+    reflaction_ray = construct_ray(intersection_cord, intersection_cord + reflaction_direction)
     # TODO: check if needed - Advance EPSILON to avoid intersection with the same object
-    # reflaction_ray = construct_ray(reflaction_ray.get_postion(EPSILON), reflaction_direction)
+    # reflaction_ray = construct_ray(reflaction_ray.get_postion(EPSILON), intersection_cord + reflaction_direction)
 
     reflection_color = compute_pixel_color(scene_settings, reflaction_ray, object_array, material_array, light_array, cam_pos, recursion_level + 1)
 
@@ -292,6 +292,8 @@ def main():
     image_array = np.zeros((img_height, img_width, 3), dtype=float)
     for w in tqdm(range(img_width), desc="width"):
         for h in tqdm(range(img_height), desc="height", leave=False):
+            # if h != 255 or w != 255:
+            #     continue
             ray = construct_ray_through_pixel(screen, h, w)
             output_color = compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, camera.position, 0)
             image_array[h, w] = np.clip(output_color * 255, 0, 255)  # Clip color values to [0, 255]

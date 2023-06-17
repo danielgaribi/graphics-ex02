@@ -14,5 +14,6 @@ def construct_ray_through_pixel(screen, h, w):
     return construct_ray(origin_position, pixel_position)
 
 def construct_ray(start_point, end_point):
-    direction = (end_point - start_point) / np.linalg.norm(end_point - start_point)
+    direction = end_point - start_point
+    direction /= np.linalg.norm(direction)
     return Ray(start_point, direction)
