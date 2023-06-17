@@ -13,7 +13,7 @@ class Screen:
         # TODO: Garibi - Runtime error
         self.through_vector = (camera.look_at - camera.position) / np.linalg.norm(camera.look_at - camera.position)
         self.right_vector = np.cross(camera.up_vector, self.through_vector) / np.linalg.norm(np.cross(camera.up_vector, self.through_vector))
-        self.up_vector = np.cross(self.right_vector, self.through_vector)
+        self.up_vector = np.cross(self.through_vector, self.right_vector)
 
         self.middle_pixel_position = camera.position + self.through_vector * camera.screen_distance
 

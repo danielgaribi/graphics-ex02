@@ -27,7 +27,7 @@ def find_plane_intersect(ray, plane):
     if np.dot(ray.direction, plane.normal) == 0:
         return DOESNT_INTERSECT
     
-    return -1 * (np.dot(ray.origin_position, plane.normal) + plane.offset) / np.dot(ray.direction, plane.normal)
+    return (plane.offset - np.dot(ray.origin_position, plane.normal)) / np.dot(ray.direction, plane.normal)
 
 
 def find_cube_intersect(ray, cube):

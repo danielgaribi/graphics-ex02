@@ -5,6 +5,7 @@ import random
 
 # TODO: debug
 import time
+from tqdm import tqdm
 
 from camera import Camera
 from light import Light
@@ -70,13 +71,34 @@ def compute_surface_normal(surface_obj, intersection_cord):
         normal = (intersection_cord - surface_obj.position) / np.linalg.norm(intersection_cord - surface_obj.position)
     elif (surface_obj.__class__.__name__ == "InfinitePlane"):
         normal = surface_obj.normal
-    elif (surface_obj.__class__.__name__ == "InfinitePlane"):
+    elif (surface_obj.__class__.__name__ == "Cube"):
         # TODO: compute cube normal
-        normal = [1,1,1]
+        normal = compute_cube_normal(surface_obj, intersection_cord)
     else: 
-        raise ValueError("Unknown object type: {}".format(obj.type))
+        raise ValueError("Unknown object type: {}".format(surface_obj.type))
 
     return np.array(normal)
+
+def compute_cube_normal(cube, intersection_cord):
+    dist_from_center_to_edge = cube.scale / 2
+    # Intersection is on the upper x-parallel plane
+    if   abs((intersection_cord[0] - cube.position[0]) - dist_from_center_to_edge) < EPSILON:
+        return [1, 0, 0]
+    # Intersection is on the lower x-parallel plane
+    elif abs((intersection_cord[0] - cube.position[0]) - dist_from_center_to_edge) < EPSILON:
+        return [-1, 0, 0]
+    # Intersection is on the upper y-parallel plane
+    elif abs((intersection_cord[1] - cube.position[1]) - dist_from_center_to_edge) < EPSILON:
+        return [0, 1, 0]
+    # Intersection is on the lower y-parallel plane
+    elif abs((intersection_cord[1] - cube.position[1]) - dist_from_center_to_edge) < EPSILON:
+        return [0, -1, 0]
+    # Intersection is on the upper z-parallel plane
+    elif abs((intersection_cord[2] - cube.position[2]) - dist_from_center_to_edge) < EPSILON:
+        return [0, 0, 1]
+    # Intersection is on the lower z-parallel plane
+    else:
+        return [0, 0, -1]
 
 # TODO: double check
 def compute_intensity(scene_settings, light, intersection_coord, surface_obj, object_array):
@@ -91,7 +113,8 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
         width_vec = np.cross(center_light_ray.direction, np.array([0, 1, 0]))
     width_vec /= np.linalg.norm(width_vec)
 
-    height_vec = np.cross(center_light_ray.direction, width_vec)
+    height_vec = np.cross(center_light_ray.direction, width_vec) 
+    height_vec /= np.linalg.norm(height_vec)
 
     # Define a rectangle on the plane centered at the light source
     rect_bottom_left = light.position - (light.radius / 2) * width_vec - (light.radius / 2) * height_vec
@@ -267,15 +290,11 @@ def main():
     screen = Screen(camera, img_width, img_height)
 
     image_array = np.zeros((img_height, img_width, 3), dtype=float)
-    for w in range(img_width):
-        for h in range(img_height):
+    for w in tqdm(range(img_width), desc="width"):
+        for h in tqdm(range(img_height), desc="height", leave=False):
             ray = construct_ray_through_pixel(screen, h, w)
             output_color = compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, camera.position, 0)
             image_array[h, w] = np.clip(output_color * 255, 0, 255)  # Clip color values to [0, 255]
-            
-            # TODO: debug 
-            if ((w % 10 == 0) and (h % 500 == 0)):
-                print(f"[h({h}),w({w})] = {image_array[h, w]}")
 
     # TODO: use arg?
     output_image_path = args.output_image
