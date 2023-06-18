@@ -1,9 +1,10 @@
 import numpy as np
 
+
 EPSILON = 10 ** -9
 DOESNT_INTERSECT = -1
 
-def find_sphere_intersect(ray, sphere):
+def find_sphere_intersect(sphere, ray):
     # acording to ray_casting_presentation page 7 (Geometric Method)
     L = sphere.position - ray.origin_position
     t_ca = np.dot(L, ray.direction)
@@ -12,25 +13,26 @@ def find_sphere_intersect(ray, sphere):
         return DOESNT_INTERSECT
     
     d_squared = np.dot(L, L) - t_ca ** 2
-    if d_squared > sphere.radius ** 2:
+    r_squeared = sphere.radius ** 2
+    if d_squared > r_squeared:
         return DOESNT_INTERSECT
     
-    t_hc = np.sqrt(sphere.radius ** 2 - d_squared)
-    t = t_ca - t_hc
-    return t
+    t_hc = np.sqrt(r_squeared - d_squared)
+    return t_ca - t_hc
 
 
-def find_plane_intersect(ray, plane):
+def find_plane_intersect(plane, ray):
     # acording to ray_casting_presentation page 9
 
     # if the dot product is 0, the ray is parallel to the plane (N orthogonal to V)
-    if np.dot(ray.direction, plane.normal) == 0:
+    dot_product = np.dot(ray.direction, plane.normal)
+    if dot_product == 0:
         return DOESNT_INTERSECT
     
-    return (plane.offset - np.dot(ray.origin_position, plane.normal)) / np.dot(ray.direction, plane.normal)
+    return (plane.offset - np.dot(ray.origin_position, plane.normal)) / dot_product
 
 
-def find_cube_intersect(ray, cube):
+def find_cube_intersect(cube, ray):
     # acording to http://www.cs.cornell.edu/courses/cs4620/2013fa/lectures/03raytracing1.pdf
     # not acording to https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
     cube_3_axis_min_position = cube.position - cube.scale / 2
@@ -70,15 +72,8 @@ def find_intersection(object_array, ray):
     intersections = []
     
     for obj in object_array:
-        if obj.__class__.__name__ == "Sphere":
-            dist = find_sphere_intersect(ray, obj)
-        elif obj.__class__.__name__ == "InfinitePlane":
-            dist = find_plane_intersect(ray, obj)
-        elif obj.__class__.__name__ == "Cube":
-            dist = find_cube_intersect(ray, obj)
-        else:
-            raise ValueError("Unknown object type: {}".format(obj.type))
-        
+        dist = obj.find_intersection(obj, ray)
+
         if dist != DOESNT_INTERSECT:
             intersections.append((obj, dist))
     
@@ -89,29 +84,26 @@ def find_intersection(object_array, ray):
 def is_ray_hit(object_array, ray, max_dist, prior_object):
 
     if prior_object is not None:
-        if prior_object.__class__.__name__ == "Sphere":
-            dist = find_sphere_intersect(ray, prior_object)
-        elif prior_object.__class__.__name__ == "InfinitePlane":
-            dist = find_plane_intersect(ray, prior_object)
-        elif prior_object.__class__.__name__ == "Cube":
-            dist = find_cube_intersect(ray, prior_object)
-        else:
-            raise ValueError("Unknown object type: {}".format(obj.type))
-        
+        dist = prior_object.find_intersection(prior_object, ray)
+                
         if dist != DOESNT_INTERSECT and dist < max_dist:
             return True, prior_object
     
     for obj in object_array:
-        if obj.__class__.__name__ == "Sphere":
-            dist = find_sphere_intersect(ray, obj)
-        elif obj.__class__.__name__ == "InfinitePlane":
-            dist = find_plane_intersect(ray, obj)
-        elif obj.__class__.__name__ == "Cube":
-            dist = find_cube_intersect(ray, obj)
-        else:
-            raise ValueError("Unknown object type: {}".format(obj.type))
+        dist = obj.find_intersection(obj, ray)
         
         if dist != DOESNT_INTERSECT and dist < max_dist:
             return True, obj
     
     return False, prior_object
+
+def update_find_intersection_func_for_all_objects(object_array):
+    for obj in object_array:
+        if obj.__class__.__name__ == "Sphere":
+            obj.find_intersection = find_sphere_intersect
+        elif obj.__class__.__name__ == "InfinitePlane":
+            obj.find_intersection = find_plane_intersect
+        elif obj.__class__.__name__ == "Cube":
+            obj.find_intersection = find_cube_intersect
+        else:
+            raise ValueError("Unknown object type: {}".format(obj.type))

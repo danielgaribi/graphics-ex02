@@ -15,7 +15,7 @@ from surfaces.cube import Cube
 from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
 
-from intersection import find_intersection, is_ray_hit
+from intersection import find_intersection, is_ray_hit, update_find_intersection_func_for_all_objects
 from screen import Screen
 from ray import construct_ray_through_pixel, construct_ray
 
@@ -65,19 +65,16 @@ def save_image(image_array):
     # Save the image to a file
     image.save("scenes/Spheres.png")
 
-# return the normal of the surface - normalized
-def compute_surface_normal(surface_obj, intersection_cord):
-    if (surface_obj.__class__.__name__ == "Sphere"):
-        normal = (intersection_cord - surface_obj.position) / np.linalg.norm(intersection_cord - surface_obj.position)
-    elif (surface_obj.__class__.__name__ == "InfinitePlane"):
-        normal = surface_obj.normal
-    elif (surface_obj.__class__.__name__ == "Cube"):
-        # TODO: compute cube normal
-        normal = compute_cube_normal(surface_obj, intersection_cord)
-    else: 
-        raise ValueError("Unknown object type: {}".format(surface_obj.type))
-
-    return np.array(normal)
+def update_get_normal_func_for_all_objects(object_array):
+    for obj in object_array:
+        if obj.__class__.__name__ == "Sphere":
+            obj.get_noraml = lambda object, intersection_cord: (intersection_cord - object.position) / np.linalg.norm(intersection_cord - object.position)
+        elif obj.__class__.__name__ == "InfinitePlane":
+            obj.get_noraml = lambda object, intersection_cord: object.normal
+        elif obj.__class__.__name__ == "Cube":
+            obj.get_noraml = lambda object, intersection_cord: np.array(compute_cube_normal(object, intersection_cord))
+        else:
+            raise ValueError("Unknown object type: {}".format(obj.type))
 
 def compute_cube_normal(cube, intersection_cord):
     dist_from_center_to_edge = cube.scale / 2
@@ -99,6 +96,7 @@ def compute_cube_normal(cube, intersection_cord):
     # Intersection is on the lower z-parallel plane
     else:
         return [0, 0, -1]
+
 
 # TODO: double check
 def compute_intensity(scene_settings, light, intersection_coord, surface_obj, object_array):
@@ -139,7 +137,6 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
             # Construct a shadow ray from the random point to the intersection coordinate
             grid_cell_ray = construct_ray(cell_position, intersection_coord)
             max_dist = np.linalg.norm(cell_position - intersection_coord) - EPSILON
-            # grid_cell_ray = construct_ray(grid_cell_ray.get_postion(0.0001), cell_position)
 
             # Find the objects the shadow ray intersects with
             is_hit_other_objects, prior_obj = is_ray_hit(object_array, grid_cell_ray, max_dist, prior_obj)
@@ -148,7 +145,7 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
                 rays_hit += 1
             
 
-    light_rays_ratio = float(rays_hit) / float(N * N)
+    light_rays_ratio = rays_hit / (N ** 2)
     light_intensity = 1 * (1 - light.shadow_intensity) + (light.shadow_intensity * light_rays_ratio)
     return light_intensity
 
@@ -156,8 +153,8 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
 def compute_reflection_direction(vec1, normal):
     teta = np.dot(vec1, normal)
     vec2 = vec1 - 2 * teta * normal
-    vec2 = vec2 / np.linalg.norm(vec2)
-    return vec2
+    return vec2 / np.linalg.norm(vec2)
+
 
 # Acording to ray_casting_presentation page 42
 def compute_diffuse_color(light, light_intensity, intersection_cord, normal):
@@ -168,7 +165,7 @@ def compute_diffuse_color(light, light_intensity, intersection_cord, normal):
     if (N_dot_L < 0):
         return np.zeros(3, dtype=float)
     
-    return np.array(light.color) * N_dot_L * light_intensity
+    return light.color * N_dot_L * light_intensity
 
 # Acording to ray_casting_presentation page 45
 def compute_specular_color(light, light_intensity, cam_pos, intersection_cord, normal, shininess):
@@ -184,19 +181,18 @@ def compute_specular_color(light, light_intensity, cam_pos, intersection_cord, n
     if (V_dot_R < 0):
         return np.zeros(3, dtype=float)
     
-    return np.array(light.color) * np.power(V_dot_R, shininess) * light_intensity * light.specular_intensity
+    return light.color * np.power(V_dot_R, shininess) * light_intensity * light.specular_intensity
     
 def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, object_array, material_array, light_array, recursion_level):
-    curr_surface_obj  = surfaces[surface_idx][OBJECT_IDX]
-    curr_surface_dist = surfaces[surface_idx][DIST_IDX]
+    curr_surface_obj, curr_surface_dist = surfaces[surface_idx]
     
     intersection_cord = ray.get_postion(curr_surface_dist)
-    normal = compute_surface_normal(curr_surface_obj, intersection_cord)
+    normal = curr_surface_obj.get_noraml(curr_surface_obj, intersection_cord)
 
     # Get surface's material
     curr_material = material_array[curr_surface_obj.material_index - 1] # -1 because material index start from 1 TODO: check if needed
 
-    bg_color         = np.array(scene_settings.background_color)
+    bg_color         = scene_settings.background_color
     diffuse_color    = np.zeros(3, dtype=float)
     specular_color   = np.zeros(3, dtype=float)
 
@@ -219,18 +215,12 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     specular_color   *= curr_material.specular_color
     reflection_color *= curr_material.reflection_color
 
-    # TODO: debug 
-    # print(f"curr_material.diffuse_color: {curr_material.diffuse_color}")
-    # print(f"diffuse_color (add material factor): {diffuse_color}")
-    # print(f"specular_color: {specular_color}")
-    # print(f"reflection_color: {reflection_color}")
-
     output_color = bg_color * curr_material.transparency + (diffuse_color + specular_color) * (1 - curr_material.transparency) + reflection_color
     return output_color
 
 def compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, cam_pos, recursion_level):
     if (recursion_level == scene_settings.max_recursions): 
-        return np.array(scene_settings.background_color)
+        return scene_settings.background_color
     
     surfaces = find_intersection(object_array, ray)
     if (len(surfaces) == 0):
@@ -238,12 +228,17 @@ def compute_pixel_color(scene_settings, ray, object_array, material_array, light
     else:
         output_color = copmute_surface_color(scene_settings, ray, cam_pos, surfaces, 0, object_array, material_array, light_array, recursion_level)
     
-    return np.array(output_color)
+    return output_color
 
-def objects_to_numpy(camera, object_array):
+def objects_to_numpy(camera, object_array, light_array, scene_settings):
     camera.position = np.array(camera.position)
     camera.look_at = np.array(camera.look_at)
     camera.up_vector = np.array(camera.up_vector)
+
+    scene_settings.background_color = np.array(scene_settings.background_color)
+
+    for light in light_array:
+        light.color = np.array(light.color)
 
     for obj in object_array:
         if obj.__class__.__name__ == "Sphere":
@@ -254,6 +249,9 @@ def objects_to_numpy(camera, object_array):
             obj.position = np.array(obj.position)
         else:
             raise ValueError("Unknown object type: {}".format(obj.type))
+    
+    update_find_intersection_func_for_all_objects(object_array)
+    update_get_normal_func_for_all_objects(object_array)
 
 def main():
     # TODO: debug
@@ -281,7 +279,7 @@ def main():
         else:
             object_array.append(obj)
 
-    objects_to_numpy(camera, object_array)
+    objects_to_numpy(camera, object_array, light_array, scene_settings)
 
     img_width = args.width
     img_height = args.width
