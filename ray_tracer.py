@@ -165,7 +165,7 @@ def compute_diffuse_color(light, light_intensity, intersection_cord, normal):
     if (N_dot_L < 0):
         return np.zeros(3, dtype=float)
     
-    return light.color * N_dot_L * light_intensity
+    return np.array(light.color) * N_dot_L * light_intensity
 
 # Acording to ray_casting_presentation page 45
 def compute_specular_color(light, light_intensity, cam_pos, intersection_cord, normal, shininess):
@@ -181,7 +181,7 @@ def compute_specular_color(light, light_intensity, cam_pos, intersection_cord, n
     if (V_dot_R < 0):
         return np.zeros(3, dtype=float)
     
-    return light.color * np.power(V_dot_R, shininess) * light_intensity * light.specular_intensity
+    return np.array(light.color) * np.power(V_dot_R, shininess) * light_intensity * light.specular_intensity
     
 def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, object_array, material_array, light_array, recursion_level):
     curr_surface_obj, curr_surface_dist = surfaces[surface_idx]
@@ -192,7 +192,7 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     # Get surface's material
     curr_material = material_array[curr_surface_obj.material_index - 1] # -1 because material index start from 1 TODO: check if needed
 
-    bg_color         = scene_settings.background_color
+    bg_color         = np.array(scene_settings.background_color)
     diffuse_color    = np.zeros(3, dtype=float)
     specular_color   = np.zeros(3, dtype=float)
 
@@ -220,7 +220,7 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
 
 def compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, cam_pos, recursion_level):
     if (recursion_level == scene_settings.max_recursions): 
-        return scene_settings.background_color
+        return np.array(scene_settings.background_color)
     
     surfaces = find_intersection(object_array, ray)
     if (len(surfaces) == 0):
@@ -228,17 +228,12 @@ def compute_pixel_color(scene_settings, ray, object_array, material_array, light
     else:
         output_color = copmute_surface_color(scene_settings, ray, cam_pos, surfaces, 0, object_array, material_array, light_array, recursion_level)
     
-    return output_color
+    return np.array(output_color)
 
 def objects_to_numpy(camera, object_array, light_array, scene_settings):
     camera.position = np.array(camera.position)
     camera.look_at = np.array(camera.look_at)
     camera.up_vector = np.array(camera.up_vector)
-
-    scene_settings.background_color = np.array(scene_settings.background_color)
-
-    for light in light_array:
-        light.color = np.array(light.color)
 
     for obj in object_array:
         if obj.__class__.__name__ == "Sphere":
