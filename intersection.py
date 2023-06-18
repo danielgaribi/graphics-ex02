@@ -38,6 +38,13 @@ def find_cube_intersect(cube, ray):
     cube_3_axis_min_position = cube.position - cube.scale / 2
     cube_3_axis_max_position = cube.position + cube.scale / 2
 
+    if ray.direction[0] == 0:
+        ray.direction[0] = EPSILON
+    if ray.direction[1] == 0:
+        ray.direction[1] = EPSILON
+    if ray.direction[2] == 0:
+        ray.direction[2] = EPSILON
+
     t_x_min = (cube_3_axis_min_position[0] - ray.origin_position[0]) / ray.direction[0]
     t_x_max = (cube_3_axis_max_position[0] - ray.origin_position[0]) / ray.direction[0]
     t_x_enter = min(t_x_min, t_x_max)
@@ -53,7 +60,7 @@ def find_cube_intersect(cube, ray):
 
     if t_enter > t_exit or t_exit < 0:
         return DOESNT_INTERSECT
-
+    
     t_z_min = (cube_3_axis_min_position[2] - ray.origin_position[2]) / ray.direction[2]
     t_z_max = (cube_3_axis_max_position[2] - ray.origin_position[2]) / ray.direction[2]
     t_z_enter = min(t_z_min, t_z_max)
