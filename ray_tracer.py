@@ -103,7 +103,7 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
     N = int(scene_settings.root_number_shadow_rays)
 
     # Construct a light ray
-    center_light_ray = construct_ray(light.position, end_point=intersection_coord)
+    center_light_ray, _ = construct_ray(light.position, end_point=intersection_coord)
 
     # Find a plane perpendicular to the ray
     width_vec = np.cross(center_light_ray.direction, np.array([1, 0, 0]))
@@ -135,8 +135,8 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
             cell_position = rect_bottom_left + (i + rand_x) * width_vec + (j + rand_y) * height_vec
 
             # Construct a shadow ray from the random point to the intersection coordinate
-            grid_cell_ray = construct_ray(cell_position, end_point=intersection_coord)
-            max_dist = np.linalg.norm(cell_position - intersection_coord) - EPSILON
+            grid_cell_ray, max_dist = construct_ray(cell_position, end_point=intersection_coord)
+            max_dist -= EPSILON
 
             # Find the objects the shadow ray intersects with
             is_hit_other_objects, prior_obj = is_ray_hit(object_array, grid_cell_ray, max_dist, prior_obj)
@@ -202,7 +202,7 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
         specular_color += compute_specular_color(light, light_intensity, cam_pos, intersection_cord, normal, curr_material.shininess)
         
     reflaction_direction = compute_reflection_direction(ray.direction, normal)
-    reflaction_ray = construct_ray(intersection_cord, direction=reflaction_direction)
+    reflaction_ray, _ = construct_ray(intersection_cord, direction=reflaction_direction)
     # TODO: check if needed - Advance EPSILON to avoid intersection with the same object
     # reflaction_ray = construct_ray(reflaction_ray.get_postion(EPSILON), intersection_cord + reflaction_direction)
 
