@@ -12,8 +12,8 @@ def find_sphere_intersect(sphere, ray):
     if t_ca < 0:
         return DOESNT_INTERSECT
     
-    d_squared = np.dot(L, L) - t_ca ** 2
-    r_squeared = sphere.radius ** 2
+    d_squared = np.dot(L, L) - np.power(t_ca, 2)
+    r_squeared = np.power(sphere.radius, 2)
     if d_squared > r_squeared:
         return DOESNT_INTERSECT
     
@@ -77,7 +77,6 @@ def find_cube_intersect(cube, ray):
 # Return a tuple of (surface, dist) of all objects intersacting the ray as a sorted array by distance (first is the closest to the origin of the ray)
 def find_intersection(object_array, ray):
     intersections = []
-    
     for obj in object_array:
         dist = obj.find_intersection(obj, ray)
 
@@ -85,11 +84,9 @@ def find_intersection(object_array, ray):
             intersections.append((obj, dist))
     
     intersections.sort(key=lambda x: x[1])  # Sort intersections by distance
-    
     return intersections
 
 def is_ray_hit(object_array, ray, max_dist, prior_object):
-
     if prior_object is not None:
         dist = prior_object.find_intersection(prior_object, ray)
                 

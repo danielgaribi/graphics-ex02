@@ -59,11 +59,11 @@ def parse_scene_file(file_path):
                 raise ValueError("Unknown object type: {}".format(obj_type))
     return camera, scene_settings, objects
 
-def save_image(image_array):
+def save_image(image_array, output_image):
     image = Image.fromarray(np.uint8(image_array))
 
     # Save the image to a file
-    image.save("scenes/Spheres.png")
+    image.save(output_image)
 
 def update_get_normal_func_for_all_objects(object_array):
     for obj in object_array:
@@ -97,8 +97,6 @@ def compute_cube_normal(cube, intersection_cord):
     else:
         return [0, 0, -1]
 
-
-# TODO: double check
 def compute_intensity(scene_settings, light, intersection_coord, surface_obj, object_array):
     N = int(scene_settings.root_number_shadow_rays)
 
@@ -130,9 +128,7 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
     for i in range(N):
         for j in range(N):
             # Generate a random point inside each cell
-            rand_x = random.random()
-            rand_y = random.random()
-            cell_position = rect_bottom_left + (i + rand_x) * width_vec + (j + rand_y) * height_vec
+            cell_position = rect_bottom_left + (i + random.random()) * width_vec + (j + random.random()) * height_vec
 
             # Construct a shadow ray from the random point to the intersection coordinate
             grid_cell_ray, max_dist = construct_ray(cell_position, end_point=intersection_coord)
@@ -146,15 +142,13 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
             
 
     light_rays_ratio = rays_hit / (N ** 2)
-    light_intensity = 1 * (1 - light.shadow_intensity) + (light.shadow_intensity * light_rays_ratio)
+    light_intensity = 1 - light.shadow_intensity + light.shadow_intensity * light_rays_ratio
     return light_intensity
-
 
 def compute_reflection_direction(vec1, normal):
     teta = np.dot(vec1, normal)
     vec2 = vec1 - 2 * teta * normal
     return vec2 / np.linalg.norm(vec2)
-
 
 # Acording to ray_casting_presentation page 42
 def compute_diffuse_color(light, light_intensity, intersection_cord, normal):
@@ -209,12 +203,13 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     reflection_color = compute_pixel_color(scene_settings, reflaction_ray, object_array, material_array, light_array, cam_pos, recursion_level + 1)
 
     if ((curr_material.transparency > 0.0) and (surface_idx + 1 < len(surfaces))):
+        # TODO: change recursion_level to zero? [https://moodle.tau.ac.il/mod/forum/discuss.php?d=98419]
         bg_color *= copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx + 1, object_array, material_array, light_array, recursion_level + 1)
 
-    diffuse_color    *= curr_material.diffuse_color    
+    diffuse_color    *= curr_material.diffuse_color
     specular_color   *= curr_material.specular_color
     reflection_color *= curr_material.reflection_color
-
+    
     output_color = bg_color * curr_material.transparency + (diffuse_color + specular_color) * (1 - curr_material.transparency) + reflection_color
     return output_color
 
@@ -283,23 +278,17 @@ def main():
     image_array = np.zeros((img_height, img_width, 3), dtype=float)
     for w in tqdm(range(img_width), desc="width"):
         for h in tqdm(range(img_height), desc="height", leave=False):
-            # if h != 255 or w != 255:
-            #     continue
             ray = construct_ray_through_pixel(screen, h, w)
             output_color = compute_pixel_color(scene_settings, ray, object_array, material_array, light_array, camera.position, 0)
             image_array[h, w] = np.clip(output_color * 255, 0, 255)  # Clip color values to [0, 255]
 
-    # TODO: use arg?
-    output_image_path = args.output_image
-
     # Save the output image
-    save_image(image_array)
+    save_image(image_array, args.output_image)
 
     # TODO: debug
     end_time = time.time() 
     run_time = end_time - start_time
     print(run_time)
-
 
 if __name__ == '__main__':
     main()
