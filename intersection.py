@@ -84,7 +84,7 @@ def find_intersection(object_array, ray):
     for obj in object_array:
         dist = obj.find_intersection(obj, ray)
 
-        if dist != DOESNT_INTERSECT:
+        if dist >= 0:
             intersections.append((obj, dist))
     
     intersections.sort(key=lambda x: x[1])  # Sort intersections by distance
@@ -94,13 +94,13 @@ def is_ray_hit(object_array, ray, max_dist, prior_object):
     if prior_object is not None:
         dist = prior_object.find_intersection(prior_object, ray)
                 
-        if dist != DOESNT_INTERSECT and dist < max_dist:
+        if 0 <= dist < max_dist:
             return True, prior_object
     
     for obj in object_array:
         dist = obj.find_intersection(obj, ray)
         
-        if dist != DOESNT_INTERSECT and dist < max_dist:
+        if 0 <= dist < max_dist:
             return True, obj
     
     return False, prior_object
