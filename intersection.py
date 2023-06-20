@@ -1,4 +1,4 @@
-import numpy as np
+from math import sqrt
 
 
 EPSILON = 10 ** -9
@@ -7,17 +7,20 @@ DOESNT_INTERSECT = -1
 def find_sphere_intersect(sphere, ray):
     # acording to ray_casting_presentation page 7 (Geometric Method)
     L = sphere.position - ray.origin_position
-    t_ca = np.dot(L, ray.direction)
+    # t_ca = np.dot(L, ray.direction)
+    t_ca = L[0] * ray.direction[0] + L[1] * ray.direction[1] + L[2] * ray.direction[2]
     
     if t_ca < 0:
         return DOESNT_INTERSECT
     
-    d_squared = np.dot(L, L) - np.power(t_ca, 2)
-    r_squeared = np.power(sphere.radius, 2)
+    # d_squared = np.dot(L, L) - np.power(t_ca, 2)
+    d_squared =  L[0] ** 2 + L[1] ** 2 + L[2] ** 2 - t_ca ** 2
+    # r_squeared = np.power(sphere.radius, 2)
+    r_squeared = sphere.radius ** 2
     if d_squared > r_squeared:
         return DOESNT_INTERSECT
     
-    t_hc = np.sqrt(r_squeared - d_squared)
+    t_hc = sqrt(r_squeared - d_squared)
     return t_ca - t_hc
 
 
@@ -25,16 +28,17 @@ def find_plane_intersect(plane, ray):
     # acording to ray_casting_presentation page 9
 
     # if the dot product is 0, the ray is parallel to the plane (N orthogonal to V)
-    dot_product = np.dot(ray.direction, plane.normal)
+    # dot_product = np.dot(ray.direction, plane.normal)
+    dot_product = ray.direction[0] * plane.normal[0] + ray.direction[1] * plane.normal[1] + ray.direction[2] * plane.normal[2]
     if dot_product == 0:
         return DOESNT_INTERSECT
     
-    return (plane.offset - np.dot(ray.origin_position, plane.normal)) / dot_product
+    # return (plane.offset - np.dot(ray.origin_position, plane.normal)) / dot_product
+    return (plane.offset - ray.origin_position[0] * plane.normal[0] - ray.origin_position[1] * plane.normal[1] - ray.origin_position[2] * plane.normal[2] ) / dot_product
 
 
 def find_cube_intersect(cube, ray):
     # acording to http://www.cs.cornell.edu/courses/cs4620/2013fa/lectures/03raytracing1.pdf
-    # not acording to https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
     cube_3_axis_min_position = cube.position - cube.scale / 2
     cube_3_axis_max_position = cube.position + cube.scale / 2
 

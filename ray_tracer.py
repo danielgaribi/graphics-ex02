@@ -132,10 +132,9 @@ def compute_intensity(scene_settings, light, intersection_coord, surface_obj, ob
 
             # Construct a shadow ray from the random point to the intersection coordinate
             grid_cell_ray, max_dist = construct_ray(cell_position, end_point=intersection_coord)
-            max_dist -= EPSILON
 
             # Find the objects the shadow ray intersects with
-            is_hit_other_objects, prior_obj = is_ray_hit(object_array, grid_cell_ray, max_dist, prior_obj)
+            is_hit_other_objects, prior_obj = is_ray_hit(object_array, grid_cell_ray, max_dist - EPSILON, prior_obj)
 
             if not is_hit_other_objects:
                 rays_hit += 1
