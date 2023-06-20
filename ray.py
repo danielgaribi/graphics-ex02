@@ -1,5 +1,3 @@
-import numpy as np
-
 class Ray:
     def __init__(self, origin_position, direction):
         self.origin_position = origin_position
@@ -17,7 +15,7 @@ def construct_ray(start_point, end_point=None, direction=None):
     dist_between_points = None
     if direction is None:
         direction = end_point - start_point
-        # dist_between_points = np.linalg.norm(direction)
+        # Runtime optimization: dist_between_points = np.linalg.norm(direction)
         dist_between_points = (direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2) ** 0.5
         direction /= dist_between_points
     

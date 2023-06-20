@@ -1,21 +1,20 @@
 from math import sqrt
 
-
 EPSILON = 10 ** -9
 DOESNT_INTERSECT = -1
 
 def find_sphere_intersect(sphere, ray):
     # acording to ray_casting_presentation page 7 (Geometric Method)
     L = sphere.position - ray.origin_position
-    # t_ca = np.dot(L, ray.direction)
+    # Runtime optimization: t_ca = np.dot(L, ray.direction)
     t_ca = L[0] * ray.direction[0] + L[1] * ray.direction[1] + L[2] * ray.direction[2]
     
     if t_ca < 0:
         return DOESNT_INTERSECT
     
-    # d_squared = np.dot(L, L) - np.power(t_ca, 2)
+    # Runtime optimization: d_squared = np.dot(L, L) - np.power(t_ca, 2)
     d_squared =  L[0] ** 2 + L[1] ** 2 + L[2] ** 2 - t_ca ** 2
-    # r_squeared = np.power(sphere.radius, 2)
+    # Runtime optimization: r_squeared = np.power(sphere.radius, 2)
     r_squeared = sphere.radius ** 2
     if d_squared > r_squeared:
         return DOESNT_INTERSECT
@@ -28,12 +27,12 @@ def find_plane_intersect(plane, ray):
     # acording to ray_casting_presentation page 9
 
     # if the dot product is 0, the ray is parallel to the plane (N orthogonal to V)
-    # dot_product = np.dot(ray.direction, plane.normal)
+    # Runtime optimization: dot_product = np.dot(ray.direction, plane.normal)
     dot_product = ray.direction[0] * plane.normal[0] + ray.direction[1] * plane.normal[1] + ray.direction[2] * plane.normal[2]
     if dot_product == 0:
         return DOESNT_INTERSECT
     
-    # return (plane.offset - np.dot(ray.origin_position, plane.normal)) / dot_product
+    # Runtime optimization: return (plane.offset - np.dot(ray.origin_position, plane.normal)) / dot_product
     return (plane.offset - ray.origin_position[0] * plane.normal[0] - ray.origin_position[1] * plane.normal[1] - ray.origin_position[2] * plane.normal[2] ) / dot_product
 
 

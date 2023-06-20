@@ -182,7 +182,7 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
     normal = curr_surface_obj.get_noraml(curr_surface_obj, intersection_cord)
 
     # Get surface's material
-    curr_material = material_array[curr_surface_obj.material_index - 1] # -1 because material index start from 1 TODO: check if needed
+    curr_material = material_array[curr_surface_obj.material_index - 1] # -1 because material index start from 1 
 
     bg_color         = np.array(scene_settings.background_color)
     diffuse_color    = np.zeros(3, dtype=float)
@@ -195,13 +195,10 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
         
     reflaction_direction = compute_reflection_direction(ray.direction, normal)
     reflaction_ray, _ = construct_ray(intersection_cord, direction=reflaction_direction)
-    # TODO: check if needed - Advance EPSILON to avoid intersection with the same object
-    # reflaction_ray = construct_ray(reflaction_ray.get_postion(EPSILON), intersection_cord + reflaction_direction)
 
     reflection_color = compute_pixel_color(scene_settings, reflaction_ray, object_array, material_array, light_array, cam_pos, recursion_level + 1)
 
     if ((curr_material.transparency > 0.0) and (surface_idx + 1 < len(surfaces))):
-        # TODO: change recursion_level to zero? [https://moodle.tau.ac.il/mod/forum/discuss.php?d=98419]
         bg_color *= copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx + 1, object_array, material_array, light_array, 0)
 
     diffuse_color    *= curr_material.diffuse_color
@@ -223,7 +220,7 @@ def compute_pixel_color(scene_settings, ray, object_array, material_array, light
     
     return np.array(output_color)
 
-def objects_to_numpy(camera, object_array, light_array, scene_settings):
+def objects_to_numpy(camera, object_array):
     camera.position = np.array(camera.position)
     camera.look_at = np.array(camera.look_at)
     camera.up_vector = np.array(camera.up_vector)
@@ -264,7 +261,7 @@ def main():
         else:
             object_array.append(obj)
 
-    objects_to_numpy(camera, object_array, light_array, scene_settings)
+    objects_to_numpy(camera, object_array)
 
     img_width = args.width
     img_height = args.width
