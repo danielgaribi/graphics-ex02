@@ -4,7 +4,6 @@ import numpy as np
 import random
 
 # TODO: debug
-import time
 from tqdm import tqdm
 
 from camera import Camera
@@ -203,7 +202,7 @@ def copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx, o
 
     if ((curr_material.transparency > 0.0) and (surface_idx + 1 < len(surfaces))):
         # TODO: change recursion_level to zero? [https://moodle.tau.ac.il/mod/forum/discuss.php?d=98419]
-        bg_color *= copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx + 1, object_array, material_array, light_array, recursion_level + 1)
+        bg_color *= copmute_surface_color(scene_settings, ray, cam_pos, surfaces, surface_idx + 1, object_array, material_array, light_array, 0)
 
     diffuse_color    *= curr_material.diffuse_color
     specular_color   *= curr_material.specular_color
@@ -243,9 +242,6 @@ def objects_to_numpy(camera, object_array, light_array, scene_settings):
     update_get_normal_func_for_all_objects(object_array)
 
 def main():
-    # TODO: debug
-    start_time = time.time()
-
     parser = argparse.ArgumentParser(description='Python Ray Tracer')
     parser.add_argument('scene_file', type=str, help='Path to the scene file')
     parser.add_argument('output_image', type=str, help='Name of the output image file')
@@ -283,11 +279,6 @@ def main():
 
     # Save the output image
     save_image(image_array, args.output_image)
-
-    # TODO: debug
-    end_time = time.time() 
-    run_time = end_time - start_time
-    print(run_time)
 
 if __name__ == '__main__':
     main()
